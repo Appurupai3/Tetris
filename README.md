@@ -1,4 +1,5 @@
 # Tetris
+https://appurupai3.github.io/Tetris/
 1. HTML UI Elements: (10%)
 a. HTML Canvas
 b. Buttons: Start, Left, Right, Rotate, Reset, Pause
