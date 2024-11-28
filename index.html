@@ -1,25 +1,68 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
     <meta charset="UTF-8">
     <title>俄羅斯方塊</title>
     <style>
-        #game-area {
+        body {
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            flex-direction: column;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
         }
+
+        #game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
         #score-display {
-            position: absolute;
-            top: 200px;
-            right: 280px;
+            font-size: 24px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+
+        #game-area {
+            border: 2px solid black;
+        }
+
+        #button-panel {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        button {
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
-    <div id="game-area">
-        <div id="score-display">分數<br>0</div> </div>
-    <script src="tetris.js"></script>
+    <div id="game-container">
+        <div id="score-display">分數: 0</div>
+        <canvas id="game-area" width="300" height="500"></canvas>
+        <div id="button-panel">
+            <button id="startButton">開始遊戲</button>
+            <button id="pauseButton">暫停</button>
+            <button id="resetButton">重置</button>
+            <button id="leftButton">向左</button>
+            <button id="rightButton">向右</button>
+            <button id="rotateButton">旋轉</button>
+            <button id="increaseSpeed">Speed +</button>
+        <button id="decreaseSpeed">Speed -</button>
+        </div>
+    </div>
+    <script src="t.js"></script>
 </body>
 </html>
