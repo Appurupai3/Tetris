@@ -1,50 +1,40 @@
 # Tetris
 https://appurupai3.github.io/Tetris/
-1. HTML UI Elements: (10%)
+
+HTML UI 元素 (10%)
 a. HTML Canvas
-b. Buttons: Start, Left, Right, Rotate, Reset, Pause
-c. Design your own blocks and game panels, UIs.
-2. 5 Tetris Blocks and numbers (10%)
+b. 按鈕：開始 (Start)、左 (Left)、右 (Right)、旋轉 (Rotate)、重置 (Reset)、暫停 (Pause)
+c. 設計你自己的區塊和遊戲面板、UI。
 
-- general Tetris blocks as shown above.
-a. Except the above 5 blocks, create blocks “2024” for opening animation
-b. Use random gradient color to fill each unit of a block, examples are shown
-below.
+5個Tetris區塊和數字 (10%)
+a. 除了上述5個區塊，創建“2024”區塊，用於開場動畫。
+b. 使用隨機漸變顏色填充每個區塊的單位，範例如下所示。
+c. 區塊有三種狀態：存活 (alive)、存活且選中 (alive and selected)、死亡 (dead)（無法選擇）。
 
-c. The block has three statuses: alive, alive and selected, dead (cannot be selected).
-3. Animation (15%)
-a. Opening animation: flying 2024, appear and disappear (moving to a direction)
-5%
-b. Tetris block animation: 10%
-• Randomly create one of the 5 Tetris blocks, and make it appear at the
-top of the game area.
-• Automatically Move 1 unit downward each second.
-• The next block will be created after 5 sec.
-• Use two buttons to adjust the speed (+/-)
+動畫 (15%)
+a. 開場動畫：飛行的“2024”，出現和消失（朝某個方向移動）5%
+b. Tetris區塊動畫：10%
 
-4. Each Block can detect the collision of each other. (25%)
-a. The bottom and the two sides of the game area are the boundaries that blocks
-cannot go through. 5%
-b. Blocks cannot go through (penetrate) each other. (i.e., you cannot move the
-block to somewhere it cannot go through.). 20%
-c. The block stops moving when its bottom reach the bottom of the canvas or hit
-other dead blocks. The block’s status is then set to dead.
-5. Interactive game control with the buttons and mouse: (30%)
-a. Start/Pause/Reset button. 5%
-b. Left: move the selected block to the left 2%
-c. Right: move the selected block to the right. 2%
-d. Rotate: rotate the selected blocks 90 degree clockwise. 3%
-e. You can use mouse to select which alive block you would like to control 15%
-• Only blocks which are not dead yet can be selected.
-• The block is selected if the mouse clicked inside the block.
-• The selected block will move (dragged) along the mouse until the
-mouse is released.
+隨機創建其中一個5個Tetris區塊，並讓它出現在遊戲區域的上方。
+每秒自動向下移動1單位。
+每5秒創建下一個區塊。
+使用兩個按鈕來調整速度 (+/-)。
+每個區塊可以檢測碰撞 (25%)
+a. 遊戲區域的底部和兩側是區塊無法穿過的邊界。5%
+b. 區塊之間無法穿透（即不能將區塊移動到無法穿過的地方）。20%
+c. 當區塊的底部達到畫布的底部或碰到其他死亡區塊時，區塊停止移動，並將其狀態設置為死亡。
 
-f. The selected block should be highlighted with a red bold bounding box. 3%
-6. The game is over when the block died at a place higher than the ceiling. Show a game
-over sign or animation use your creativity 5%
+互動式遊戲控制 (30%)
+a. 開始/暫停/重置按鈕。5%
+b. 左：將選中的區塊向左移動。2%
+c. 右：將選中的區塊向右移動。2%
+d. 旋轉：將選中的區塊順時針旋轉90度。3%
+e. 你可以使用鼠標選擇你想要控制的存活區塊。15%
 
-7. Code and document readability: write comments and organize your code properly. 5%
-
-Upload your code and document (screen shots of your game, check list of your tasks,
-evaluate how much percentage you finished and explain the detail of how to use your program.)
+只有尚未死亡的區塊才能被選中。
+如果鼠標點擊區塊內部，該區塊會被選中。
+選中的區塊會隨著鼠標移動（拖動），直到鼠標被放開。
+f. 被選中的區塊應該用紅色粗邊框高亮顯示。3%
+當區塊死亡並位於天花板以上時，遊戲結束。顯示遊戲結束的標誌或動畫，發揮你的創意。5%
+代碼和文檔可讀性：編寫註解並適當組織代碼。5%
+上傳你的代碼和文檔（遊戲的截圖、任務清單、評估你完成的百分比，並詳細解釋如何使用你的程式）。
