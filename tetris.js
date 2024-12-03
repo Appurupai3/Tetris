@@ -11,23 +11,30 @@ class AdvancedTetris {
         this.currentBlock = null;
         this.selectedBlock = null;
         this.gameOver = true;
-        this.isOpeningAnimation = true; // 新增變數
+        this.isOpeningAnimation = true; // 開場動畫控制
         this.score = 0;
-        this.gameSpeed = 500; // 初始速度
+        this.gameSpeed = 500; // 初始遊戲速度
         this.specialBlocks = this.create2024Blocks();
         this.currentSpecialBlock = null;
+        this.permanentGrid = []; // 永久格子儲存
         this.setupEventListeners();
         this.setupPermanentGrid();
-        this.currentBlock = null;
+        this.blockState = {
+            ALIVE: 'alive',      // 正在落下
+            DRAGGING: 'dragging', // 正在拖曳
+            DEAD: 'dead'          // 已落地無法移動
+        };
+        this.currentBlockStatus = this.blockState.ALIVE;
+        this.setupMouseSelection();
     }
 
-      createEmptyBoard() {
+    createEmptyBoard() {
         return Array.from({ length: this.rows }, () =>
-          Array.from({ length: this.cols }, () => ({ filled: false, color: null }))
+            Array.from({ length: this.cols }, () => ({ filled: false, color: null }))
         );
-      }
+    }
     
-      setupEventListeners() {
+    setupEventListeners() {
         document.addEventListener('keydown', this.handleKeyPress.bind(this));
         document.getElementById('leftButton').addEventListener('click', () => this.moveBlock('left'));
         document.getElementById('rightButton').addEventListener('click', () => this.moveBlock('right'));
@@ -35,10 +42,16 @@ class AdvancedTetris {
         document.getElementById('startButton').addEventListener('click', () => this.startGame());
         document.getElementById('pauseButton').addEventListener('click', () => this.togglePause());
         document.getElementById('resetButton').addEventListener('click', () => this.resetGame());
-      }
+        this.setupSpeedControl();
+    }
+    setupMouseSelection() {
+        this.canvas.addEventListener('mousedown', this.handleMouseDown.bind(this));
+        this.canvas.addEventListener('mousemove', this.handleMouseMove.bind(this));
+        this.canvas.addEventListener('mouseup', this.handleMouseUp.bind(this));
+    }
     
-      startGame() {
-        if (!this.gameOver) return; // 若動畫進行中，禁止開始遊戲
+    startGame() {
+        if (!this.gameOver) return;
         this.drawOpeningAnimation();
         this.score = 0;
         this.gameBoard = this.createEmptyBoard();
@@ -46,20 +59,20 @@ class AdvancedTetris {
         document.getElementById('score-display').textContent = `分數: ${this.score}`;
     }
 
-
+    // 重置遊戲
     resetGame() {
         this.startGame();
     }
 
+    // 暫停或繼續遊戲
     togglePause() {
         this.gameOver = !this.gameOver;
-        if (!this.gameOver) {
-            this.gameLoop();
-        }
+        if (!this.gameOver) this.gameLoop();
     }
 
+    // 遊戲主循環
     gameLoop() {
-        if (this.gameOver || this.isOpeningAnimation) return; // 若動畫進行中或遊戲結束，不執行
+        if (this.gameOver || this.isOpeningAnimation) return;
         this.moveBlock('down');
         this.draw();
         setTimeout(this.gameLoop.bind(this), this.gameSpeed);
@@ -82,7 +95,10 @@ class AdvancedTetris {
             x: Math.floor(this.cols / 2 - shape[0].length / 2),
             y: 0,
             color,
+            status: this.blockState.ALIVE  // 初始狀態為存活
         };
+
+        this.currentBlockStatus = this.blockState.ALIVE;
 
         if (!this.isValidMove(this.currentBlock, this.currentBlock.x, this.currentBlock.y)) {
             this.gameOver = true;
@@ -157,10 +173,11 @@ class AdvancedTetris {
     }
     setupSpeedControl() {
         document.getElementById('increaseSpeed').addEventListener('click', () => {
-            this.gameSpeed = Math.max(100, this.gameSpeed - 50);
+            if (this.gameSpeed > 100) this.gameSpeed -= 50;
         });
+
         document.getElementById('decreaseSpeed').addEventListener('click', () => {
-            this.gameSpeed = Math.min(1000, this.gameSpeed + 50);
+            this.gameSpeed += 50;
         });
     }
     highlightSelectedBlock() {
@@ -175,6 +192,7 @@ class AdvancedTetris {
             );
         }
     }
+    
 
     isValidMove(block, newX, newY) {
         for (let y = 0; y < block.shape.length; y++) {
@@ -184,19 +202,13 @@ class AdvancedTetris {
                 const boardX = newX + x;
                 const boardY = newY + y;
 
-                // Canvas boundaries
-                if (boardX < 0 || boardX >= this.cols || boardY >= this.rows) {
-                    return false;
-                }
-
-                // Block collision detection
-                if (boardY >= 0 && this.gameBoard[boardY][boardX].filled) {
-                    return false;
-                }
+                if (boardX < 0 || boardX >= this.cols || boardY >= this.rows) return false;
+                if (boardY >= 0 && this.gameBoard[boardY][boardX].filled) return false;
             }
         }
         return true;
     }
+
 
     lockBlock() {
         for (let y = 0; y < this.currentBlock.shape.length; y++) {
@@ -204,16 +216,17 @@ class AdvancedTetris {
                 if (this.currentBlock.shape[y][x]) {
                     const boardX = this.currentBlock.x + x;
                     const boardY = this.currentBlock.y + y;
-
                     if (boardY >= 0) {
-                        this.gameBoard[boardY][boardX] = {
-                            filled: true,
-                            color: this.currentBlock.color,
+                        this.gameBoard[boardY][boardX] = { 
+                            filled: true, 
+                            color: this.currentBlock.color 
                         };
                     }
                 }
             }
         }
+        this.currentBlock.status = this.blockState.DEAD;  // 設置為死亡狀態
+        this.currentBlockStatus = this.blockState.DEAD;
     }
 
     clearLines() {
@@ -235,57 +248,39 @@ class AdvancedTetris {
 
     draw() {
         this.ctx.clearRect(0, 0, this.gameWidth, this.gameHeight);
-        this.drawGrid(); // Always draw grid first
+        this.drawGrid();
         this.drawBoard();
         this.drawCurrentBlock();
+        this.highlightSelectedBlock(); // 确保在每次绘制时检查是否需要高亮
     }
 
     drawGrid() {
-        this.ctx.strokeStyle = '#ccc'; // 網格線顏色
-        this.ctx.lineWidth = 1; // 網格線寬度
-      
-        // 繪製垂直線
+        this.ctx.strokeStyle = '#ccc';
+        this.ctx.lineWidth = 1;
         for (let x = 0; x <= this.gameWidth; x += this.blockSize) {
-          this.ctx.beginPath();
-          this.ctx.moveTo(x, 0);
-          this.ctx.lineTo(x, this.gameHeight);
-          this.ctx.stroke();
+            this.ctx.beginPath();
+            this.ctx.moveTo(x, 0);
+            this.ctx.lineTo(x, this.gameHeight);
+            this.ctx.stroke();
         }
-      
-        // 繪製水平線
         for (let y = 0; y <= this.gameHeight; y += this.blockSize) {
-          this.ctx.beginPath();
-          this.ctx.moveTo(0, y);
-          this.ctx.lineTo(this.gameWidth, y);
-          this.ctx.stroke();
+            this.ctx.beginPath();
+            this.ctx.moveTo(0, y);
+            this.ctx.lineTo(this.gameWidth, y);
+            this.ctx.stroke();
         }
-      }
+    }
     
 
     drawBoard() {
         for (let y = 0; y < this.rows; y++) {
             for (let x = 0; x < this.cols; x++) {
                 if (this.gameBoard[y][x].filled) {
-                    // Set gradient fill
                     this.ctx.fillStyle = this.gameBoard[y][x].color;
-                    
-                    // Draw the block
-                    this.ctx.fillRect(
-                        x * this.blockSize,
-                        y * this.blockSize,
-                        this.blockSize,
-                        this.blockSize
-                    );
-                    
-                    // Add black border
+                    this.ctx.fillRect(x * this.blockSize, y * this.blockSize, this.blockSize, this.blockSize);
                     this.ctx.strokeStyle = 'black';
                     this.ctx.lineWidth = 2;
-                    this.ctx.strokeRect(
-                        x * this.blockSize,
-                        y * this.blockSize,
-                        this.blockSize,
-                        this.blockSize
-                    );
+                    this.ctx.strokeRect(x * this.blockSize, y * this.blockSize, this.blockSize, this.blockSize);
                 }
             }
         }
@@ -293,30 +288,14 @@ class AdvancedTetris {
 
     drawCurrentBlock() {
         if (!this.currentBlock) return;
-
         for (let y = 0; y < this.currentBlock.shape.length; y++) {
             for (let x = 0; x < this.currentBlock.shape[y].length; x++) {
                 if (this.currentBlock.shape[y][x]) {
-                    // Set gradient fill
                     this.ctx.fillStyle = this.currentBlock.color;
-                    
-                    // Draw the block
-                    this.ctx.fillRect(
-                        (this.currentBlock.x + x) * this.blockSize,
-                        (this.currentBlock.y + y) * this.blockSize,
-                        this.blockSize,
-                        this.blockSize
-                    );
-                    
-                    // Add black border
+                    this.ctx.fillRect((this.currentBlock.x + x) * this.blockSize, (this.currentBlock.y + y) * this.blockSize, this.blockSize, this.blockSize);
                     this.ctx.strokeStyle = 'black';
                     this.ctx.lineWidth = 2;
-                    this.ctx.strokeRect(
-                        (this.currentBlock.x + x) * this.blockSize,
-                        (this.currentBlock.y + y) * this.blockSize,
-                        this.blockSize,
-                        this.blockSize
-                    );
+                    this.ctx.strokeRect((this.currentBlock.x + x) * this.blockSize, (this.currentBlock.y + y) * this.blockSize, this.blockSize, this.blockSize);
                 }
             }
         }
@@ -372,21 +351,6 @@ class AdvancedTetris {
         }
         return color;
     }
-    /*
-    generateRandomGradientColor() {
-        const startColor = this.generateRandomColor();
-        const endColor = this.generateRandomColor();
-        
-        // Create a linear gradient
-        const gradient = this.ctx.createLinearGradient(
-            0, 0, 
-            this.blockSize, this.blockSize
-        );
-        gradient.addColorStop(0, startColor);
-        gradient.addColorStop(1, endColor);
-        
-        return gradient;
-    }*/
     generateRandomGradientColor() {
     const startColor = this.generateRandomColor();
     const endColor = this.generateRandomColor();
@@ -551,14 +515,10 @@ class AdvancedTetris {
     
     
 
-    // Interactive mouse selection of blocks
-    setupMouseSelection() {
-        this.canvas.addEventListener('mousedown', this.handleMouseDown.bind(this));
-        this.canvas.addEventListener('mousemove', this.handleMouseMove.bind(this));
-        this.canvas.addEventListener('mouseup', this.handleMouseUp.bind(this));
-    }
 
-    handleMouseDown(event) {
+   handleMouseDown(event) {
+        if (this.gameOver || this.currentBlockStatus === this.blockState.DEAD) return;
+
         const rect = this.canvas.getBoundingClientRect();
         const mouseX = event.clientX - rect.left;
         const mouseY = event.clientY - rect.top;
@@ -566,27 +526,70 @@ class AdvancedTetris {
         const blockX = Math.floor(mouseX / this.blockSize);
         const blockY = Math.floor(mouseY / this.blockSize);
 
-        // Check if clicked inside the current block
-        if (this.isPointInsideBlock(blockX, blockY)) {
+        // 檢查是否點擊在當前方塊內且方塊為存活狀態
+        if (this.isPointInsideBlock(blockX, blockY) && 
+            this.currentBlockStatus === this.blockState.ALIVE) {
             this.selectedBlock = this.currentBlock;
+            this.currentBlockStatus = this.blockState.DRAGGING;
+            this.selectedBlock.status = this.blockState.DRAGGING;
             this.highlightSelectedBlock();
         }
     }
 
     handleMouseMove(event) {
-        if (this.selectedBlock) {
+        if (this.selectedBlock && 
+            this.currentBlockStatus === this.blockState.DRAGGING) {
             const rect = this.canvas.getBoundingClientRect();
             const mouseX = event.clientX - rect.left;
-            const blockX = Math.floor(mouseX / this.blockSize);
+            const mouseY = event.clientY - rect.top;
 
-            // Move block horizontally with mouse
-            this.selectedBlock.x = blockX - Math.floor(this.selectedBlock.shape[0].length / 2);
-            this.draw();
+            const blockX = Math.floor(mouseX / this.blockSize);
+            const blockY = Math.floor(mouseY / this.blockSize);
+
+            // 嘗試移動方塊並驗證是否為合法移動
+            const newBlock = {
+                ...this.selectedBlock,
+                x: blockX - Math.floor(this.selectedBlock.shape[0].length / 2),
+                y: blockY - Math.floor(this.selectedBlock.shape.length / 2)
+            };
+
+            if (this.isValidMove(newBlock, newBlock.x, newBlock.y)) {
+                this.currentBlock = newBlock;
+                this.draw();
+            }
         }
     }
+
     handleMouseUp() {
-        this.selectedBlock = null;
-        this.draw();
+        if (this.currentBlockStatus === this.blockState.DRAGGING) {
+            // 確認方塊位置
+            if (this.isValidMove(this.currentBlock, this.currentBlock.x, this.currentBlock.y)) {
+                this.currentBlockStatus = this.blockState.ALIVE;
+                this.selectedBlock = null;
+                this.draw();
+            } else {
+                // 如果移動不合法，恢復到原位
+                this.currentBlock = this.selectedBlock;
+                this.currentBlockStatus = this.blockState.ALIVE;
+                this.selectedBlock = null;
+                this.draw();
+            }
+        }
+    }
+    highlightSelectedBlock() {
+        // 只有在方塊為存活或拖曳狀態時才顯示紅色選擇框
+        if (this.currentBlock && 
+            (this.currentBlockStatus === this.blockState.ALIVE || 
+             this.currentBlockStatus === this.blockState.DRAGGING)) {
+            this.ctx.strokeStyle = 'red';
+            this.ctx.lineWidth = 3;
+            this.ctx.strokeRect(
+                this.currentBlock.x * this.blockSize,
+                this.currentBlock.y * this.blockSize,
+                this.currentBlock.shape[0].length * this.blockSize,
+                this.currentBlock.shape.length * this.blockSize
+            );
+        }
     }
 
     handleKeyPress(e) {
