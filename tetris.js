@@ -1,40 +1,46 @@
 class AdvancedTetris {
     constructor() {
+        // 初始化遊戲畫布與參數
         this.canvas = document.getElementById('game-area');
         this.ctx = this.canvas.getContext('2d');
-        this.blockSize = 20;
-        this.gameWidth = 300;
-        this.gameHeight = 500;
-        this.rows = this.gameHeight / this.blockSize;
-        this.cols = this.gameWidth / this.blockSize;
-        this.gameBoard = this.createEmptyBoard();
-        this.currentBlock = null;
-        this.selectedBlock = null;
-        this.gameOver = true;
-        this.isOpeningAnimation = true; // 開場動畫控制
-        this.score = 0;
-        this.gameSpeed = 500; // 初始遊戲速度
-        this.specialBlocks = this.create2024Blocks();
-        this.currentSpecialBlock = null;
-        this.permanentGrid = []; // 永久格子儲存
-        this.setupEventListeners();
-        this.setupPermanentGrid();
-        this.blockState = {
-            ALIVE: 'alive',      // 正在落下
-            DRAGGING: 'dragging', // 正在拖曳
-            DEAD: 'dead'          // 已落地無法移動
+        this.blockSize = 20; // 方塊大小
+        this.gameWidth = 300; // 遊戲畫面寬度
+        this.gameHeight = 500; // 遊戲畫面高度
+        this.rows = this.gameHeight / this.blockSize; // 行數
+        this.cols = this.gameWidth / this.blockSize; // 列數
+        this.gameBoard = this.createEmptyBoard(); // 遊戲板初始化
+        this.currentBlock = null; // 當前方塊
+        this.selectedBlock = null; // 被選中的方塊
+        this.gameOver = true; // 遊戲是否結束
+        this.isOpeningAnimation = true; // 是否播放開場動畫
+        this.score = 0; // 分數
+        this.gameSpeed = 1000; // 初始遊戲速度
+        this.specialBlocks = this.create2024Blocks(); // 特殊方塊（2024字樣）
+        this.currentSpecialBlock = null; // 當前特殊方塊
+        this.permanentGrid = []; // 儲存永久格子狀態
+        this.blockState = { // 方塊狀態
+            ALIVE: 'alive',      // 活動中
+            DRAGGING: 'dragging', // 拖曳中
+            DEAD: 'dead'          // 落地後靜止
         };
-        this.currentBlockStatus = this.blockState.ALIVE;
-        this.setupMouseSelection();
+        this.currentBlockStatus = this.blockState.ALIVE; // 當前方塊狀態
+        this.setupEventListeners(); // 設定鍵盤與按鈕事件
+        this.setupPermanentGrid(); // 初始化永久格子
+        this.setupMouseSelection(); // 設定滑鼠拖曳事件
+        this.isDragging = false;
+        this.dragOffsetX = 0;
+        this.dragOffsetY = 0;
     }
 
     createEmptyBoard() {
+        // 建立空白的遊戲板
         return Array.from({ length: this.rows }, () =>
             Array.from({ length: this.cols }, () => ({ filled: false, color: null }))
         );
     }
-    
+
     setupEventListeners() {
+        // 設定鍵盤與按鈕事件
         document.addEventListener('keydown', this.handleKeyPress.bind(this));
         document.getElementById('leftButton').addEventListener('click', () => this.moveBlock('left'));
         document.getElementById('rightButton').addEventListener('click', () => this.moveBlock('right'));
@@ -42,65 +48,71 @@ class AdvancedTetris {
         document.getElementById('startButton').addEventListener('click', () => this.startGame());
         document.getElementById('pauseButton').addEventListener('click', () => this.togglePause());
         document.getElementById('resetButton').addEventListener('click', () => this.resetGame());
-        this.setupSpeedControl();
+        this.setupSpeedControl(); // 設定速度控制
     }
+
     setupMouseSelection() {
+        // 設定滑鼠相關事件
         this.canvas.addEventListener('mousedown', this.handleMouseDown.bind(this));
         this.canvas.addEventListener('mousemove', this.handleMouseMove.bind(this));
         this.canvas.addEventListener('mouseup', this.handleMouseUp.bind(this));
     }
-    
+
     startGame() {
+        // 開始遊戲
         if (!this.gameOver) return;
-        this.drawOpeningAnimation();
-        this.score = 0;
-        this.gameBoard = this.createEmptyBoard();
-        this.createBlock();
+        this.drawOpeningAnimation(); // 播放開場動畫
+        this.score = 0; // 重置分數
+        this.gameBoard = this.createEmptyBoard(); // 清空遊戲板
+        this.createBlock(); // 創建新方塊
         document.getElementById('score-display').textContent = `分數: ${this.score}`;
     }
 
-    // 重置遊戲
     resetGame() {
+        // 重置遊戲
         this.startGame();
     }
 
-    // 暫停或繼續遊戲
     togglePause() {
+        // 暫停或繼續遊戲
         this.gameOver = !this.gameOver;
         if (!this.gameOver) this.gameLoop();
     }
 
-    // 遊戲主循環
     gameLoop() {
-        if (this.gameOver || this.isOpeningAnimation) return;
-        this.moveBlock('down');
-        this.draw();
-        setTimeout(this.gameLoop.bind(this), this.gameSpeed);
+        // 只有在遊戲未結束、不是開場動畫、且當前方塊不在拖曳中時才下落
+        if (this.gameOver || 
+            this.isOpeningAnimation) return;
+    
+        this.moveBlock('down'); // 方塊向下移動
+        this.draw(); // 繪製畫面
+        setTimeout(this.gameLoop.bind(this), this.gameSpeed); // 根據速度調整循環頻率
     }
+
     createBlock() {
+        // 創建隨機形狀的方塊
         const shapes = [
-            [[1, 1, 1, 1]], // I
-            [[1, 1], [1, 1]], // O
-            [[0, 1, 1], [1, 1, 0]], // S
-            [[1, 1, 0], [0, 1, 1]], // Z
-            [[1, 0, 0], [1, 1, 1]], // L
-            [[0, 0, 1], [1, 1, 1]], // J
-            [[0, 1, 0], [1, 1, 1]], // T
+            [[1, 1, 1, 1]], // I 形狀
+            [[1, 1], [1, 1]], // O 形狀
+            [[0, 1, 1], [1, 1, 0]], // S 形狀
+            [[1, 1, 0], [0, 1, 1]], // Z 形狀
+            [[1, 0, 0], [1, 1, 1]], // L 形狀
+            [[0, 0, 1], [1, 1, 1]], // J 形狀
+            [[0, 1, 0], [1, 1, 1]]  // T 形狀
         ];
         const shape = shapes[Math.floor(Math.random() * shapes.length)];
-        const color = this.generateRandomColor();
+        const color = this.generateRandomColor(); // 隨機顏色
 
         this.currentBlock = {
             shape,
             x: Math.floor(this.cols / 2 - shape[0].length / 2),
             y: 0,
             color,
-            status: this.blockState.ALIVE  // 初始狀態為存活
+            status: this.blockState.ALIVE // 初始狀態為活動
         };
 
-        this.currentBlockStatus = this.blockState.ALIVE;
-
         if (!this.isValidMove(this.currentBlock, this.currentBlock.x, this.currentBlock.y)) {
+            // 無法生成新方塊時結束遊戲
             this.gameOver = true;
             alert('遊戲結束！你的分數是：' + this.score);
         }
@@ -148,18 +160,54 @@ class AdvancedTetris {
 
     rotateBlock() {
         if (this.gameOver) return;
-
+    
         const rotatedShape = this.currentBlock.shape[0].map((_, index) =>
             this.currentBlock.shape.map(row => row[index]).reverse()
         );
-
-        const originalBlock = this.currentBlock;
-        this.currentBlock.shape = rotatedShape;
-
-        if (!this.isValidMove(this.currentBlock, this.currentBlock.x, this.currentBlock.y)) {
-            this.currentBlock = originalBlock;
+    
+        // 保留原方塊的顏色和位置信息
+        const originalColor = this.currentBlock.color;
+        const newX = this.currentBlock.x;
+        const newY = this.currentBlock.y;
+    
+        // 嘗試向左、右、下調整位置，尋找合法的旋轉位置
+        for (let i = 0; i < 4; i++) {
+            const potentialBlock = {
+                shape: rotatedShape,
+                x: newX,
+                y: newY,
+                color: originalColor,  // 保留原顏色
+                status: this.currentBlock.status  // 保留原狀態
+            };
+    
+            if (this.isValidMove(potentialBlock, newX, newY)) {
+                this.currentBlock = potentialBlock;
+                break;
+            }
+    
+            // 後續調整位置的邏輯保持不變
+            newX++;
+            if (this.isValidMove(potentialBlock, newX, newY)) {
+                this.currentBlock = potentialBlock;
+                break;
+            }
+    
+            newX--;
+            newY++;
+            if (this.isValidMove(potentialBlock, newX, newY)) {
+                this.currentBlock = potentialBlock;
+                break;
+            }
+    
+            // 如果都無法合法旋轉，恢復原狀
+            newX--;
+            newY--;
+            rotatedShape.reverse();
+            for (let j = 0; j < rotatedShape.length; j++) {
+                rotatedShape[j].reverse();
+            }
         }
-
+    
         this.draw();
     }
     drawGameOverAnimation() {
@@ -225,7 +273,7 @@ class AdvancedTetris {
                 }
             }
         }
-        this.currentBlock.status = this.blockState.DEAD;  // 設置為死亡狀態
+        this.currentBlock.status = this.blockState.DEAD;
         this.currentBlockStatus = this.blockState.DEAD;
     }
 
@@ -253,7 +301,6 @@ class AdvancedTetris {
         this.drawCurrentBlock();
         this.highlightSelectedBlock(); // 确保在每次绘制时检查是否需要高亮
     }
-
     drawGrid() {
         this.ctx.strokeStyle = '#ccc';
         this.ctx.lineWidth = 1;
@@ -512,75 +559,69 @@ class AdvancedTetris {
             }
         }, 30);
     }
-    
-    
+    handleMouseDown(event) {
+        if (this.gameOver) return;
 
-
-   handleMouseDown(event) {
-        if (this.gameOver || this.currentBlockStatus === this.blockState.DEAD) return;
-
+        // 取得滑鼠在畫布上的座標
         const rect = this.canvas.getBoundingClientRect();
-        const mouseX = event.clientX - rect.left;
-        const mouseY = event.clientY - rect.top;
+        const mouseX = Math.floor((event.clientX - rect.left) / this.blockSize);
+        const mouseY = Math.floor((event.clientY - rect.top) / this.blockSize);
 
-        const blockX = Math.floor(mouseX / this.blockSize);
-        const blockY = Math.floor(mouseY / this.blockSize);
-
-        // 檢查是否點擊在當前方塊內且方塊為存活狀態
-        if (this.isPointInsideBlock(blockX, blockY) && 
-            this.currentBlockStatus === this.blockState.ALIVE) {
-            this.selectedBlock = this.currentBlock;
+        // 檢查目前方塊是否存活且點擊在方塊內
+        if (this.currentBlock && 
+            this.currentBlock.status === this.blockState.ALIVE && 
+            this.isPointInsideBlock(mouseX, mouseY)) {
+            
+            this.isDragging = true;
+            this.currentBlock.status = this.blockState.DRAGGING;
             this.currentBlockStatus = this.blockState.DRAGGING;
-            this.selectedBlock.status = this.blockState.DRAGGING;
-            this.highlightSelectedBlock();
+            
+            // 計算拖曳偏移量
+            this.dragOffsetX = mouseX - this.currentBlock.x;
+            this.dragOffsetY = mouseY - this.currentBlock.y;
         }
     }
 
     handleMouseMove(event) {
-        if (this.selectedBlock && 
-            this.currentBlockStatus === this.blockState.DRAGGING) {
-            const rect = this.canvas.getBoundingClientRect();
-            const mouseX = event.clientX - rect.left;
-            const mouseY = event.clientY - rect.top;
+        if (!this.isDragging) return;
 
-            const blockX = Math.floor(mouseX / this.blockSize);
-            const blockY = Math.floor(mouseY / this.blockSize);
+        // 取得滑鼠在畫布上的座標
+        const rect = this.canvas.getBoundingClientRect();
+        const mouseX = Math.floor((event.clientX - rect.left) / this.blockSize);
+        const mouseY = Math.floor((event.clientY - rect.top) / this.blockSize);
 
-            // 嘗試移動方塊並驗證是否為合法移動
-            const newBlock = {
-                ...this.selectedBlock,
-                x: blockX - Math.floor(this.selectedBlock.shape[0].length / 2),
-                y: blockY - Math.floor(this.selectedBlock.shape.length / 2)
-            };
+        // 計算新的方塊位置
+        const newX = mouseX - this.dragOffsetX;
+        const newY = mouseY - this.dragOffsetY;
 
-            if (this.isValidMove(newBlock, newBlock.x, newBlock.y)) {
-                this.currentBlock = newBlock;
-                this.draw();
-            }
+        // 檢查移動是否合法
+        if (this.isValidMove(this.currentBlock, newX, newY)) {
+            this.currentBlock.x = newX;
+            this.currentBlock.y = newY;
+            this.draw();
         }
     }
 
     handleMouseUp() {
-        if (this.currentBlockStatus === this.blockState.DRAGGING) {
-            // 確認方塊位置
-            if (this.isValidMove(this.currentBlock, this.currentBlock.x, this.currentBlock.y)) {
-                this.currentBlockStatus = this.blockState.ALIVE;
-                this.selectedBlock = null;
-                this.draw();
-            } else {
-                // 如果移動不合法，恢復到原位
-                this.currentBlock = this.selectedBlock;
-                this.currentBlockStatus = this.blockState.ALIVE;
-                this.selectedBlock = null;
-                this.draw();
-            }
+        if (!this.isDragging) return;
+
+        this.isDragging = false;
+        
+        // 如果方塊無法繼續下移，則鎖定方塊
+        if (!this.isValidMove(this.currentBlock, this.currentBlock.x, this.currentBlock.y + 1)) {
+            this.lockBlock();
+            this.clearLines();
+            this.createBlock();
         }
+
+        this.currentBlock.status = this.blockState.ALIVE;
+        this.currentBlockStatus = this.blockState.ALIVE;
+        this.draw();
     }
     highlightSelectedBlock() {
         // 只有在方塊為存活或拖曳狀態時才顯示紅色選擇框
         if (this.currentBlock && 
-            (this.currentBlockStatus === this.blockState.ALIVE || 
-             this.currentBlockStatus === this.blockState.DRAGGING)) {
+            (this.currentBlockStatus === this.blockState.DRAGGING)) {
             this.ctx.strokeStyle = 'red';
             this.ctx.lineWidth = 3;
             this.ctx.strokeRect(
@@ -590,6 +631,21 @@ class AdvancedTetris {
                 this.currentBlock.shape.length * this.blockSize
             );
         }
+    }
+    dropBlockToBottom() {
+        if (this.gameOver) return;
+    
+        // 持續向下移動直到不能再移動
+        while (this.isValidMove(this.currentBlock, this.currentBlock.x, this.currentBlock.y + 1)) {
+            this.currentBlock.y++;
+        }
+    
+        // 鎖定方塊
+        this.lockBlock();
+        this.clearLines();
+        this.createBlock();
+    
+        this.draw();
     }
 
     handleKeyPress(e) {
@@ -605,6 +661,9 @@ class AdvancedTetris {
                 break;
             case 'ArrowUp':
                 this.rotateBlock();
+                break;
+            case ' ':  // 空白鍵
+                this.dropBlockToBottom();
                 break;
         }
     }

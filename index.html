@@ -11,9 +11,25 @@
             align-items: center;
             flex-direction: column;
             font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
+            background-color: #c5f9ab;
             margin: 0;
             padding: 20px;
+        }
+        .image-button {
+        background-size: cover;
+        border: none;
+        padding: 15px 32px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+        }
+        .visible {
+        display: block;
+        }
+
+        .hidden {
+        display: none;
         }
 
         #game-container {
@@ -30,6 +46,7 @@
 
         #game-area {
             border: 2px solid black;
+            background-color: #ffffff;
         }
 
         #button-panel {
@@ -40,11 +57,18 @@
 
         button {
             padding: 10px;
-            background-color: #4CAF50;
+            background-color: #2d2d25;
             color: white;
             border: none;
             border-radius: 5px;
             cursor: pointer;
+        }
+        button:hover {
+        background-color: #0b0b0b; /* 滑鼠移入時的顏色 */
+        }
+
+        button:active {
+        background-color: #4e504e; /* 按下時的顏色 */
         }
     </style>
 </head>
@@ -53,14 +77,14 @@
         <div id="score-display">分數: 0</div>
         <canvas id="game-area" width="300" height="500"></canvas>
         <div id="button-panel">
-            <button id="startButton">開始遊戲</button>
-            <button id="pauseButton"> ▶</button>
-            <button id="resetButton">🔃</button>
-            <button id="leftButton">⬅️</button>
-            <button id="rightButton">➡️</button>
-            <button id="rotateButton">🔃</button>
-            <button id="increaseSpeed">Speed +</button>
-        <button id="decreaseSpeed">Speed -</button>
+            <button id="startButton"><img src="images/start.png" alt="start" width="30" height="30"></button>
+            <button id="pauseButton"> <img src="images/pause-player.png" alt="pause" width="30" height="30"></button>
+            <button id="resetButton"><img src="images/power-on.png" alt="restart" width="30" height="30"></button>
+            <button id="leftButton"><img src="images/arrowL.png" alt="left" width="30" height="30"></button>
+            <button id="rightButton"><img src="images/arrowR.png" alt="right" width="30" height="30"></button>
+            <button id="rotateButton"><img src="images/rotate.png" alt="ro" width="30" height="30"></button>
+            <button id="increaseSpeed"><img src="images/fast.png" alt="fast" width="30" height="30"></button>
+        <button id="decreaseSpeed"><img src="images/snail.png" alt="slow" width="30" height="30"></button>
         </div>
     </div>
     <script src="tetris.js"></script>
